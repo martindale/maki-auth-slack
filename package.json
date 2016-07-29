@@ -1,0 +1,36 @@
+{
+  "name": "maki-auth-slack",
+  "version": "0.1.0",
+  "description": "Authenticate against a Maki-powered service using Slack.",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/martindale/maki-auth-slack.git"
+  },
+  "keywords": [
+    "maki",
+    "plugin",
+    "auth",
+    "authentication"
+  ],
+  "author": "Eric Martindale",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/martindale/maki-auth-slack/issues"
+  },
+  "homepage": "https://github.com/martindale/maki-auth-slack",
+  "dependencies": {
+    "async": "^2.0.1",
+    "connect-flash": "^0.1.1",
+    "cookie-parser": "^1.4.3",
+    "express-session": "^1.14.0",
+    "level": "^1.4.0",
+    "level-session-store": "^2.0.1",
+    "maki-forms": "0.0.1",
+    "passport": "^0.3.2",
+    "passport-slack": "0.0.6"
+  }
+}
