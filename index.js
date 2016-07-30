@@ -25,6 +25,8 @@ function AuthSlack(config) {
 
   var resources = {};
   if (self.config.resource) {
+    // TODO: modularize this so it can be re-used
+    // probably place it in a shared Resource defition, "Identity" (?)
     resources[ self.config.resource ] = {
       //plugin: passportLocalMongoose,
       plugin: function (schema, options) {
@@ -43,6 +45,8 @@ function AuthSlack(config) {
     services: {
       http: {
         middleware: function (req, res, next) {
+          // TODO: modularize this so it can be re-used
+          // probably place it in a shared Resource defition, "Session"
           var stack = [];
           if (!req.session.hash) {
             stack.push(function(done) {
@@ -60,6 +64,7 @@ function AuthSlack(config) {
           });
         },
         setup: function( maki ) {
+          // TODO: modularize this so it can be re-used
           if (!maki.passport) {
             console.warn('[WARNING]', 'No passport configured!  Attaching...');
             
@@ -191,9 +196,25 @@ function AuthSlack(config) {
             });
           }
 
+          // Stubs for session management
+          /* BEGIN STUBS */
           maki.app.get('/authentications/slack', maki.passport.authorize('slack'));
           maki.app.get('/authentications/slack/callback', maki.passport.authorize('slack'), function(req, res, next) {
             res.redirect('/');
+          });
+          /* END STUBS */
+
+          // Stubs for session management
+          /* BEGIN STUBS */
+          maki.app.get('/sessions', function(req, res, next) {
+            res.format({
+              json: function() {
+                res.send([req.session]);
+              },
+              /*html: function() {
+                res.redirect('/');
+              }*/
+            });
           });
           
           maki.app.delete('/sessions/:sessionID', function(req, res, next) {
@@ -208,7 +229,9 @@ function AuthSlack(config) {
               });
             });
           });
+          /* END STUBS */
 
+          // TODO: modularize these and re-use it across other auth plugins
           maki.passport.serializeUser(function(user, done) {
             console.log('serializing:', user);
             done( null , user.id );
