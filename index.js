@@ -121,6 +121,17 @@ function AuthSlack(config) {
               });
 
             });
+            
+            maki.app.use(function(req, res, next) {
+              maki.resources[self.config.resource].count({
+                status: 'active'
+              }, function(err, count) {
+                if (err) console.error(err);
+                res.locals.online = count || 0;
+                next();
+              });
+            });
+            
           }
 
           var strategy = new SlackStrategy({
