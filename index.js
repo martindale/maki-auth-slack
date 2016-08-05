@@ -1,3 +1,5 @@
+var url = require('url');
+
 var async = require('async');
 var SlackStrategy = require('passport-slack').Strategy;
 
@@ -54,6 +56,7 @@ function AuthSlack(config) {
               req.session.save( done );
             });
           }
+
           async.series( stack , function (err, results) {
             req.user = req.session.user;
             // set a user context (from passport)
@@ -131,7 +134,6 @@ function AuthSlack(config) {
                 next();
               });
             });
-            
           }
 
           var strategy = new SlackStrategy({
@@ -209,9 +211,31 @@ function AuthSlack(config) {
 
           // Stubs for session management
           /* BEGIN STUBS */
-          maki.app.get('/authentications/slack', maki.passport.authorize('slack'));
+          maki.app.get('/authentications/slack', function(req, res, next) {
+            console.log('pre-authentications, next:', req.param('next'));
+            if (!req.param('next')) return next();
+            var parsed = url.parse(req.param('next'));
+            req.session.next = parsed.path;
+            req.session.save(function(err) {
+              if (err) console.error(err);
+              console.log('sessions next:', req.session);
+              next();
+            });
+          }, maki.passport.authorize('slack'));
           maki.app.get('/authentications/slack/callback', maki.passport.authorize('slack'), function(req, res, next) {
-            res.redirect('/');
+            console.log('callback next:', req.session);
+            if (!req.session.next) return res.redirect('/');
+            
+            var parsed = url.parse(req.session.next);
+            var next = parsed.path;
+            
+            console.log('parsed:', parsed);
+            
+            req.session.next = null;
+            req.session.save(function(err) {
+              if (err) console.error(err);
+              res.redirect(next);
+            });
           });
           /* END STUBS */
 
