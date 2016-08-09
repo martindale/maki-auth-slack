@@ -122,7 +122,6 @@ function AuthSlack(config) {
                   next();
                 }
               });
-
             });
             
             maki.app.use(function(req, res, next) {
@@ -141,7 +140,7 @@ function AuthSlack(config) {
             clientID: self.config.slack.id,
             clientSecret: self.config.slack.secret,
             callbackURL: self.config.slack.callback,
-            scope: 'users:read'
+            scope: 'users:read chat:write:user reactions:read emoji:read'
           }, self.config.slack.verifyUser || verifyUser);
           
           maki.passport.use(strategy);
@@ -151,6 +150,7 @@ function AuthSlack(config) {
               return done('Wrong team.');
             }
 
+            var innerProfile = profile._json.info.user.profile;
             var Resource = maki.resources[ self.config.resource ];
             
             Resource.get({
@@ -161,8 +161,24 @@ function AuthSlack(config) {
                 req.user = user;
                 req.session.user = user;
                 req.session.identity = user;
-                return req.session.save(function() {
-                  return done( null , user );
+                
+                console.log('new access token:', accessToken);
+                
+                var query = {
+                  id: user.id
+                };
+                var ops = [
+                  { op: 'add', path: '/tokens', value: { slack: null } },
+                  { op: 'replace', path: '/tokens/slack', value: accessToken }
+                ];
+                
+                console.log('patching:', query , ops );
+
+                return Resource.patch(query, ops, function(err, num) {
+                  if (err) return done(err);
+                  return req.session.save(function() {
+                    return done( null , user );
+                  });
                 });
               }
 
@@ -177,14 +193,32 @@ function AuthSlack(config) {
                 if (err) return done(err);
 
                 if (!similarUser) {
-                  Resource.create({
+                  var user = {
                     id: profile.displayName,
                     username: profile.displayName,
+                    name: {
+                      given: innerProfile.first_name,
+                      family: innerProfile.last_name
+                    },
+                    email: innerProfile.email,
+                    bio: innerProfile.title,
+                    image: {
+                      original: innerProfile.image_original,
+                      avatar: innerProfile.image_192,
+                    },
                     links: {
                       slack: profile.id
+                    },
+                    tokens: {
+                      slack: accessToken
                     }
-                  }, function(err, createdUser) {
+                  };
+                  
+                  Resource.create(user, function(err, createdUser) {
                     if (err) return done(err);
+                    
+                    console.log('created:', createdUser);
+                    
                     req.session.user = createdUser;
                     req.session.save(function(err) {
                       if (err) return done(err);
@@ -195,9 +229,13 @@ function AuthSlack(config) {
                   Resource.patch({
                     id: similarUser.id
                   }, [
-                    { op: 'add', path: '/links/slack', value: profile.id }
+                    { op: 'add', path: '/links/slack', value: profile.id },
+                    { op: 'replace', path: '/tokens/slack', value: accessToken },
                   ], function(err, num) {
                     if (err) return done(err);
+                    
+                    console.log('replacement results:', num);
+                    
                     req.session.user = similarUser;
                     req.session.save(function(err) {
                       if (err) return done(err);
