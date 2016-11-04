@@ -67,6 +67,19 @@ function AuthSlack(config) {
           });
         },
         setup: function( maki ) {
+          // TODO: look into modularizing this; config checking is common.
+          // bitcore used something clever, not sure if I recall what...
+          if (
+            !self.config ||
+            !self.config.slack ||
+            !self.config.slack.id ||
+            !self.config.slack.secret ||
+            !self.config.slack.callback
+          ) {
+            return console.error('[ERROR]', 'auth provider "slack" requires `id`, `secret`, and `callback`');
+          }
+          
+          
           // TODO: modularize this so it can be re-used
           if (!maki.passport) {
             console.warn('[WARNING]', 'No passport configured!  Attaching...');
